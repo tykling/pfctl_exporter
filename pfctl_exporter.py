@@ -1,6 +1,6 @@
 from prometheus_client.core import GaugeMetricFamily, CounterMetricFamily, REGISTRY
 import time
-from typing import Iterator
+from typing import Iterator, Union
 import re
 from prometheus_client.registry import Collector
 from prometheus_client import start_http_server
@@ -25,8 +25,8 @@ class PfctlCollector(Collector):  # type: ignore
         return []
 
     def collect(
-        self, mock_output: str | None = None
-    ) -> Iterator[CounterMetricFamily | GaugeMetricFamily]:
+        self, mock_output: Union[str, None] = None
+    ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
         """Run pfctl, parse output and return metrics."""
         if mock_output:
             logging.debug("NOT running 'pfctl -vvs info', using mock_output instead")
@@ -72,7 +72,7 @@ class PfctlCollector(Collector):  # type: ignore
                 logging.warning(f"unknown line, skipping: {line}")
         logging.debug("no more lines, this is the end of collect()")
 
-    def get_kv(self, line: str) -> tuple[str, int] | tuple[None, None]:
+    def get_kv(self, line: str) -> Union[tuple[str, int], tuple[None, None]]:
         """Turn the string "  searches                         4994939            2.3/s" into the tuple ("searches", 4994939)."""
         m = re.match(f"\s{2}(?P<key>[a-z-\s]+)\s+(?P<value>\d+).*", line)
         if not m:
