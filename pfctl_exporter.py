@@ -97,8 +97,8 @@ def main() -> None:
         "-p",
         "--port",
         type=int,
-        help="Portnumber. Defaults to 9248.",
-        default=9248,
+        help="Portnumber. Defaults to 9630.",
+        default=9630,
     )
     parser.add_argument(
         "-d",
