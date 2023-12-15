@@ -28,54 +28,71 @@ class PfctlCollector(Collector):  # type: ignore
         self, mock_output: Union[str, None] = None
     ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
         """Run pfctl, parse output and return metrics."""
+        cmd = ["pfctl", "-vvs", "info"]
+        cmdstr = " ".join(cmd)
         if mock_output:
-            logging.debug("NOT running 'pfctl -vvs info', using mock_output instead")
+            logging.debug(f"NOT running '{cmdstr}', using mock_output instead")
             lines = mock_output.split("\n")
         else:
-            logging.debug("Running 'pfctl -vvs info' ...")
-            proc = subprocess.run(
-                ["pfctl", "-vvs", "info"], text=True, capture_output=True
-            )
-            lines = proc.stdout.split("\n")
-            # TODO: error handling if pfctl fails somehow
+            logging.debug("Running '{cmdstr}' ...")
+            proc = subprocess.run(cmd, text=True, capture_output=True)
+            if proc.returncode != 0:
+                logging.error(
+                    f"Running '{cmdstr}' failed with exit code {proc.returncode}, bailing out"
+                )
+                raise RuntimeError(f"running {cmdstr} failed")
+            else:
+                logging.debug("pfctl returned something, checking it...")
         header: str = ""
         # loop over lines in the output
         for line in lines:
-            while header == "" and line[:11] != "State Table":
+            if not line:
+                # skip empty lines
+                continue
+            if header == "" and line[:11] != "State Table":
                 # still looking for the first header
                 continue
-            # header lines start from the line start, metrics start with two spaces
+            # header lines start from the line start, metrics start indented with two spaces
             if line[0:2] != "  ":
-                # this is a header
+                # this is a header line
+                if "Total             Rate" in line:
+                    # this header needs some trimming
+                    line = line[: line.find("  ")]
                 header = line.strip().lower().replace(" ", "_")
-                logging.debug(f"Found new header {header}")
+                logging.debug(f"Found new header: '{header}'")
                 continue
             elif line[0:2] == "  ":
                 # this is a metric for the current header
                 key, value = self.get_kv(line)
-                if not all([key, value]):
+                if key is None or value is None:
                     logging.warning(
-                        f"cannot parse metric for header {header}, skipping line: {line}"
+                        f"cannot parse metric for header '{header}', skipping line: '{line}'"
                     )
                     continue
-                key = f"{header}_{key}"
-                logging.debug(f"found new metric {key} with value {value}")
+                # replace illegal chars in the key
+                key = key.replace(" ", "_").replace("-", "_")
+                metric = f"pfctl_{header}_{key}"
                 # pfctl returns mostly Counters but also a few Gauges,
                 # the lines containing a Counter value ends in "/s"
                 if line[-2:] == "/s":
                     # this is a Counter
-                    yield CounterMetricFamily(key, key, value=value)
+                    logging.debug(
+                        f"found new Counter metric {metric} with value {value}"
+                    )
+                    yield CounterMetricFamily(metric, metric, value=value)
                 else:
                     # this is a Gauge
-                    yield GaugeMetricFamily(key, key, value=value)
+                    logging.debug(f"found new Gauge metric {metric} with value {value}")
+                    yield GaugeMetricFamily(metric, metric, value=value)
             else:
                 logging.warning(f"unknown line, skipping: {line}")
         logging.debug("no more lines, this is the end of collect()")
 
     def get_kv(self, line: str) -> Union[tuple[str, int], tuple[None, None]]:
         """Turn the string "  searches                         4994939            2.3/s" into the tuple ("searches", 4994939)."""
-        m = re.match(f"\s{2}(?P<key>[a-z-\s]+)\s+(?P<value>\d+).*", line)
+        m = re.match(r"  (?P<key>[a-z\- ]+?) +(?P<value>[0-9]+).*", line)
         if not m:
+            logging.debug(f"no regex match for line: '{line}'")
             return None, None
         return str(m.group("key")), int(m.group("value"))
 
