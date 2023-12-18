@@ -391,7 +391,7 @@ class PfctlCollector(Collector):  # type: ignore
                     'Adding new Gauge metric pfctl_table_addresses{table="%s"} %s'
                     % (table, m.group("addresses"))
                 )
-                metrics["cleared"].add_metric([table], m.group("addresses"))
+                metrics["addresses"].add_metric([table], m.group("addresses"))
                 continue
 
             # look for Cleared: in a line like "	Cleared:     Sun Nov 19 18:50:41 2023"
