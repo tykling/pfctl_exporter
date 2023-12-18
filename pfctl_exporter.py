@@ -358,7 +358,7 @@ class PfctlCollector(Collector):  # type: ignore
 
             # look for table headers like "--a-r-- prometheus6"
             m = re.match(
-                r"^(?P<constant>[c-])(?P<persistent>[p-])(?P<active>[a-])(?P<inactive>[i-])(?P<referenced>[r-])(?P<hidden>[h-])(?P<counters>[C-])\t(?P<table>[a-z]+)$",
+                r"^(?P<constant>[c-])(?P<persistent>[p-])(?P<active>[a-])(?P<inactive>[i-])(?P<referenced>[r-])(?P<hidden>[h-])(?P<counters>[C-])\t(?P<table>[a-z0-9-_]+)$",
                 line,
             )
             if m:
