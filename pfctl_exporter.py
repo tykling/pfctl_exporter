@@ -31,7 +31,7 @@ class PfctlCollector(Collector):  # type: ignore
         yield from self.collect_info()
         yield from self.collect_interfaces()
         yield from self.collect_rules()
-        yield GaugeMetricFamily("up", "The value of this Gauge is always 1 when the pfctl_exporter is up")
+        yield GaugeMetricFamily("up", "The value of this Gauge is always 1 when the pfctl_exporter is up", value=1)
 
     def run_pfctl_command(self, cmd: list[str]) -> list[str]:
         """Run a pfctl command. Hardcode full path for now."""
