@@ -28,6 +28,12 @@ class PfctlCollector(Collector):  # type: ignore
         self, mock_output: Union[str, None] = None
     ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
         """Run pfctl, parse output and return metrics."""
+        yield from self.collect_info()
+
+    def collect_info(
+        self, mock_output: Union[str, None] = None
+    ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
+        """Run pfctl -vvs info, parse output and return metrics."""
         cmd = ["pfctl", "-vvs", "info"]
         cmdstr = " ".join(cmd)
         if mock_output:
