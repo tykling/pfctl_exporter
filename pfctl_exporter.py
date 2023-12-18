@@ -232,7 +232,7 @@ class PfctlCollector(Collector):  # type: ignore
         self, mock_output: Union[list[str], None] = None
     ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
         """Run pfctl -vs rules, parse output and return metrics."""
-        cmd = ["-vvs", "rules"]
+        cmd = ["-vs", "rules"]
         lines = mock_output or self.run_pfctl_command(cmd)
         logging.debug(f"got {len(lines)} lines of output from 'pfctl -vs rules'")
 
