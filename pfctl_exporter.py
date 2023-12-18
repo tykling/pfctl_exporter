@@ -43,6 +43,7 @@ class PfctlCollector(Collector):  # type: ignore
                 raise RuntimeError(f"running {cmdstr} failed")
             else:
                 logging.debug("pfctl returned something, checking it...")
+                lines = proc.stdout.split("\n")
         header: str = ""
         # loop over lines in the output
         for line in lines:
