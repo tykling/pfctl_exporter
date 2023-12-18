@@ -142,3 +142,49 @@ pass in quick proto tcp from <allowssh> to <firewalls_own_ips> port = ssh flags 
   [ Evaluations: 81079     Packets: 0         Bytes: 0           States: 0     ]
   [ Inserted: uid 0 pid 2786 State Creations: 0     ]
 """
+
+sample_tables_output = """--a-r-- allowssh
+	Addresses:   12
+	Cleared:     Sun Nov 19 18:50:41 2023
+	References:  [ Anchors: 0                  Rules: 2                  ]
+	Evaluations: [ NoMatch: 550                Match: 0                  ]
+	In/Block:    [ Packets: 0                  Bytes: 0                  ]
+	In/Pass:     [ Packets: 0                  Bytes: 0                  ]
+	In/XPass:    [ Packets: 0                  Bytes: 0                  ]
+	Out/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	Out/XPass:   [ Packets: 0                  Bytes: 0                  ]
+--a-r-- nuc2
+	Addresses:   1
+	Cleared:     Fri Dec  1 11:02:46 2023
+	References:  [ Anchors: 0                  Rules: 2                  ]
+	Evaluations: [ NoMatch: 0                  Match: 25                 ]
+	In/Block:    [ Packets: 0                  Bytes: 0                  ]
+	In/Pass:     [ Packets: 461268             Bytes: 57925850           ]
+	In/XPass:    [ Packets: 0                  Bytes: 0                  ]
+	Out/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out/Pass:    [ Packets: 661462             Bytes: 830514949          ]
+	Out/XPass:   [ Packets: 0                  Bytes: 0                  ]
+-pa---- portknock
+	Addresses:   0
+	Cleared:     Sun Nov 19 18:50:41 2023
+	References:  [ Anchors: 0                  Rules: 0                  ]
+	Evaluations: [ NoMatch: 0                  Match: 0                  ]
+	In/Block:    [ Packets: 0                  Bytes: 0                  ]
+	In/Pass:     [ Packets: 0                  Bytes: 0                  ]
+	In/XPass:    [ Packets: 0                  Bytes: 0                  ]
+	Out/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	Out/XPass:   [ Packets: 0                  Bytes: 0                  ]
+--a-r-- prometheus6
+	Addresses:   1
+	Cleared:     Fri Dec  1 11:07:06 2023
+	References:  [ Anchors: 0                  Rules: 2                  ]
+	Evaluations: [ NoMatch: 0                  Match: 25                 ]
+	In/Block:    [ Packets: 0                  Bytes: 0                  ]
+	In/Pass:     [ Packets: 461268             Bytes: 57925850           ]
+	In/XPass:    [ Packets: 0                  Bytes: 0                  ]
+	Out/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out/Pass:    [ Packets: 661462             Bytes: 830514949          ]
+	Out/XPass:   [ Packets: 0                  Bytes: 0                  ]
+"""

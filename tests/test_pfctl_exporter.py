@@ -2,7 +2,12 @@
 
 import logging
 from pfctl_exporter import PfctlCollector
-from .samples import sample_info_output, sample_interfaces_output, sample_rules_output
+from .samples import (
+    sample_info_output,
+    sample_interfaces_output,
+    sample_rules_output,
+    sample_tables_output,
+)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -41,5 +46,28 @@ def test_parse_rules_output(caplog) -> None:
         pass
     assert (
         'Adding new Counter metric: pfctl_rule_bytes_total{rule="pass in quick on em0.7 proto tcp from <prometheus6> to <nuc2> port = 9999 flags S/SA keep state"} 33758359'
+        in caplog.text
+    )
+
+
+def test_parse_tables_output(caplog) -> None:
+    caplog.set_level(logging.DEBUG)
+    c = PfctlCollector()
+    for _ in c.collect_tables(mock_output=sample_tables_output.split("\n")):
+        pass
+    assert (
+        'Adding new Gauge metric pfctl_table_addresses{table="allowssh"} 12'
+        in caplog.text
+    )
+    assert (
+        'Adding new Gauge metric pfctl_table_cleared_timestamp_seconds{table="allowssh"} 1700416241'
+        in caplog.text
+    )
+    assert (
+        'Adding new Gauge metric pfctl_table_flags_persistent{table="portknock"} 1'
+        in caplog.text
+    )
+    assert (
+        'Adding new Counter metric pfctl_table_bytes_total{table="portknock", direction="Out", action="Pass"} 830514949'
         in caplog.text
     )

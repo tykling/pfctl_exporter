@@ -31,7 +31,12 @@ class PfctlCollector(Collector):  # type: ignore
         yield from self.collect_info()
         yield from self.collect_interfaces()
         yield from self.collect_rules()
-        yield GaugeMetricFamily("up", "The value of this Gauge is always 1 when the pfctl_exporter is up", value=1)
+        yield from self.collect_tables()
+        yield GaugeMetricFamily(
+            "up",
+            "The value of this Gauge is always 1 when the pfctl_exporter is up",
+            value=1,
+        )
 
     def run_pfctl_command(self, cmd: list[str]) -> list[str]:
         """Run a pfctl command. Hardcode full path for now."""
@@ -185,9 +190,7 @@ class PfctlCollector(Collector):  # type: ignore
             # this should be a metrics line for the current interface in this format:
             # "	In4/Block:   [ Packets: 184339             Bytes: 29172941           ]"
             # where "In" can be "In" or "Out", "4" can be "4" or "6", and "Block" can be "Block" or "Pass"
-            direction, family, action, packets, byts = self.parse_interface_metric(
-                line
-            )
+            direction, family, action, packets, byts = self.parse_interface_metric(line)
             if direction is None:
                 logging.warning(
                     f"cannot parse metric for interface '{interface}', skipping line: '{line}'"
@@ -222,9 +225,9 @@ class PfctlCollector(Collector):  # type: ignore
             logging.debug(f"no regex match for line: '{line}'")
             return None, None, None, None, None
         return (
-            str(m.group("direction")).lower(),
+            str(m.group("direction")),
             f"ipv{m.group('family')}",
-            str(m.group("action")).lower(),
+            str(m.group("action")),
             int(m.group("packets")),
             int(m.group("bytes")),
         )
@@ -271,6 +274,200 @@ class PfctlCollector(Collector):  # type: ignore
                         % (metric, rule, m.group(metric))
                     )
                     metrics[metric].add_metric([rule], m.group(metric))
+
+        # done, yield everything
+        for metric in metrics.values():
+            yield metric
+
+    def collect_tables(
+        self, mock_output: Union[list[str], None] = None
+    ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
+        """Run pfctl -vvs Tables, parse output and return metrics."""
+        cmd = ["-vvs", "Tables"]
+        lines = mock_output or self.run_pfctl_command(cmd)
+        logging.debug(f"got {len(lines)} lines of output from 'pfctl -vvs Tables'")
+
+        # define metrics
+        metrics: dict[str, Union[GaugeMetricFamily, CounterMetricFamily]] = {}
+        # table flags line like "--a-r-- prometheus6"
+        for flag in [
+            "constant",
+            "persistent",
+            "active",
+            "inactive",
+            "referenced",
+            "hidden",
+            "counters",
+        ]:
+            metrics[f"pfctl_table_flags_{flag}"] = GaugeMetricFamily(
+                f"pfctl_table_flags_{flag}",
+                f"Gauge set to 1 if this pf table has the {flag} flag, 0 if not.",
+                labels=["table"],
+            )
+        # Addresses: line
+        metrics["addresses"] = GaugeMetricFamily(
+            "pfctl_table_addresses",
+            "Total number of addresses in this pf table",
+            labels=["table"],
+        )
+        # Cleared: line
+        metrics["cleared"] = GaugeMetricFamily(
+            "pfctl_table_cleared_timestamp_seconds",
+            "Timestamp for when the counters for this table were last reset",
+            labels=["table"],
+        )
+        # References: line
+        metrics["references_anchors"] = GaugeMetricFamily(
+            "pfctl_table_anchor_references",
+            "The number of anchors in the current pf ruleset referencing this table",
+            labels=["table"],
+        )
+        metrics["references_rules"] = GaugeMetricFamily(
+            "pfctl_table_ruleset_references",
+            "The number of rules in the current pf ruleset referencing this table",
+            labels=["table"],
+        )
+        # Evaluations: line
+        metrics["evaluations_nomatch"] = CounterMetricFamily(
+            "pfctl_table_nomatch_evaluations",
+            "The number of evaluations of this pf table resulting in a no-match",
+            labels=["table"],
+        )
+        metrics["evaluations_match"] = CounterMetricFamily(
+            "pfctl_table_match_evaluations",
+            "The number of evaluations of this pf table resulting in a match",
+            labels=["table"],
+        )
+        # counters
+        metrics["counters_packets"] = CounterMetricFamily(
+            "pfctl_table_packets_total",
+            "The number of packets for this table aggregated by traffic direction and firewall action",
+            labels=["table", "direction", "action"],
+        )
+        metrics["counters_bytes"] = CounterMetricFamily(
+            "pfctl_table_bytes_total",
+            "The number of bytes for this table aggregated by traffic direction and firewall action",
+            labels=["table", "direction", "action"],
+        )
+
+        # loop over lines in the output
+        for line in lines:
+            if not line:
+                # skip empty lines
+                continue
+
+            # look for table headers like "--a-r-- prometheus6"
+            m = re.match(
+                r"^(?P<constant>[c-])(?P<persistent>[p-])(?P<active>[a-])(?P<inactive>[i-])(?P<referenced>[r-])(?P<hidden>[h-])(?P<counters>[C-]) (?P<table>[a-z]+)$",
+                line,
+            )
+            if m:
+                table = m.group("table")
+                logging.debug(
+                    f"found new table: '{table}' - getting flags and metrics..."
+                )
+                for flag in [
+                    "constant",
+                    "persistent",
+                    "active",
+                    "inactive",
+                    "referenced",
+                    "hidden",
+                    "counters",
+                ]:
+                    value = 0 if m.group(flag) == "-" else 1
+                    # the value is - if the flag is not enabled and a letter if it is enabled
+                    logging.debug(
+                        'Adding new Gauge metric pfctl_table_flags_%s{table="%s"} %s'
+                        % (flag, table, value)
+                    )
+                    metrics[f"pfctl_table_flags_{flag}"].add_metric([table], value)
+                continue
+
+            # look for Addresses: in a line like "	Addresses:   12"
+            m = re.match(r"^\tAddresses:\s+(?P<addresses>[0-9]+)", line)
+            if m:
+                logging.debug(
+                    'Adding new Gauge metric pfctl_table_addresses{table="%s"} %s'
+                    % (table, m.group("addresses"))
+                )
+                metrics["cleared"].add_metric([table], m.group("addresses"))
+                continue
+
+            # look for Cleared: in a line like "	Cleared:     Sun Nov 19 18:50:41 2023"
+            m = re.match(r"\tCleared:\s+(?P<cleared>.+)", line)
+            if m:
+                cleared = int(
+                    time.mktime(
+                        time.strptime(m.group("cleared"), "%a %b %d %H:%M:%S %Y")
+                    )
+                )
+                logging.debug(
+                    'Adding new Gauge metric pfctl_table_cleared_timestamp_seconds{table="%s"} %s'
+                    % (table, cleared)
+                )
+                metrics["cleared"].add_metric([table], cleared)
+                continue
+
+            # look for References: line like "	References:  [ Anchors: 0                  Rules: 2                  ]"
+            m = re.match(
+                r"^\tReferences:\s+\[ Anchors: (?P<anchors>[0-9]+)\s+Rules: (?P<rules>[0-9]+)\s+\]$",
+                line,
+            )
+            if m:
+                logging.debug(
+                    'Adding new Gauge metric pfctl_table_anchor_references{table="%s"} %s'
+                    % (table, m.group("anchors"))
+                )
+                metrics["references_anchors"].add_metric([table], m.group("anchors"))
+                logging.debug(
+                    'Adding new Gauge metric pfctl_table_ruleset_references{table="%s"} %s'
+                    % (table, m.group("rules"))
+                )
+                metrics["references_rules"].add_metric([table], m.group("rules"))
+
+            # look for Evaluations: line like "	Evaluations: [ NoMatch: 0                  Match: 25                 ]"
+            m = re.match(
+                r"^\tEvaluations:\s+\[ NoMatch: (?P<nomatch>[0-9]+)\s+Match: (?P<match>[0-9]+)\s+\]$",
+                line,
+            )
+            if m:
+                logging.debug(
+                    'Adding new Gauge metric pfctl_table_nomatch_evaluations{table="%s"} %s'
+                    % (table, m.group("nomatch"))
+                )
+                metrics["evaluations_nomatch"].add_metric([table], m.group("nomatch"))
+                logging.debug(
+                    'Adding new Gauge metric pfctl_table_match_evaluations{table="%s"} %s'
+                    % (table, m.group("match"))
+                )
+                metrics["evaluations_match"].add_metric([table], m.group("match"))
+
+            # look for table counters like "	In/Pass:     [ Packets: 461268             Bytes: 57925850           ]"
+            m = re.match(
+                r"^\t(?P<direction>In|Out)/(?P<action>Block|Pass|Xpass):\s+\[ Packets: (?P<packets>[0-9]+)\s+Bytes: (?P<bytes>[0-9]+)\s+\]",
+                line,
+            )
+            if m:
+                logging.debug(
+                    'Adding new Counter metric pfctl_table_packets_total{table="%s", direction="%s", action="%s"} %s'
+                    % (
+                        table,
+                        m.group("direction"),
+                        m.group("action"),
+                        m.group("packets"),
+                    )
+                )
+                metrics["counters_packets"].add_metric(
+                    [table, m.group("direction"), m.group("action")], m.group("packets")
+                )
+                logging.debug(
+                    'Adding new Counter metric pfctl_table_bytes_total{table="%s", direction="%s", action="%s"} %s'
+                    % (table, m.group("direction"), m.group("action"), m.group("bytes"))
+                )
+                metrics["counters_bytes"].add_metric(
+                    [table, m.group("direction"), m.group("action")], m.group("bytes")
+                )
 
         # done, yield everything
         for metric in metrics.values():
