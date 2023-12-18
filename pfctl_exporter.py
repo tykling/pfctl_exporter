@@ -231,10 +231,10 @@ class PfctlCollector(Collector):  # type: ignore
     def collect_rules(
         self, mock_output: Union[list[str], None] = None
     ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
-        """Run pfctl -vs rules, parse output and return metrics."""
-        cmd = ["-vs", "rules"]
+        """Run pfctl -Pvs rules, parse output and return metrics."""
+        cmd = ["-Pvs", "rules"]
         lines = mock_output or self.run_pfctl_command(cmd)
-        logging.debug(f"got {len(lines)} lines of output from 'pfctl -vs rules'")
+        logging.debug(f"got {len(lines)} lines of output from 'pfctl -Pvs rules'")
 
         # define metrics
         metrics: dict[str, Union[GaugeMetricFamily, CounterMetricFamily]] = {}
