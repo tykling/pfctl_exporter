@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 
+## Unreleased
+
+### Changed
+
+- Installed executable is now `pfctl-exporter` instead of `pfctl_exporter`
+
+
 ## [v0.1.0] - 2023-12-18
 
 - Initial release. Only `pfctl -vvs info` metrics are parsed for now. Largely untested.

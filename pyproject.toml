@@ -26,7 +26,7 @@ readme = "README.md"
 requires-python = ">=3.9"
 
 [project.scripts]
-pfctl_exporter = "pfctl_exporter:main"
+pfctl-exporter = "pfctl_exporter:main"
 
 [project.optional-dependencies]
 dev = ["twine == 4.0.2", "pre-commit == 3.5.0", "setuptools-scm == 8.0.4", "build==1.0.3"]
