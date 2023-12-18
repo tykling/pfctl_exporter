@@ -121,22 +121,22 @@ class PfctlCollector(Collector):  # type: ignore
         # define metrics
         metrics: dict[str, Union[GaugeMetricFamily, CounterMetricFamily]] = {}
         metrics["cleared"] = GaugeMetricFamily(
-            "pfctl_interfaces_cleared_timestamp_seconds",
+            "pfctl_interface_cleared_timestamp_seconds",
             "Timestamp for when the counters for this interface were last reset",
             labels=["interface"],
         )
         metrics["references"] = GaugeMetricFamily(
-            "pfctl_interfaces_ruleset_references",
+            "pfctl_interface_ruleset_references",
             "The number of rules in the current pf ruleset referencing this interface",
             labels=["interface"],
         )
         metrics["counters_packets"] = CounterMetricFamily(
-            "pfctl_interfaces_packets_total",
+            "pfctl_interface_packets_total",
             "The number of packets on this interface aggregated by direction, family, and action",
             labels=["interface", "direction", "family", "action"],
         )
         metrics["counters_bytes"] = CounterMetricFamily(
-            "pfctl_interfaces_bytes_total",
+            "pfctl_interface_bytes_total",
             "The number of bytes on this interface aggregated by direction, family, and action",
             labels=["interface", "direction", "family", "action"],
         )
@@ -160,7 +160,7 @@ class PfctlCollector(Collector):  # type: ignore
             m = re.match(r"\tReferences:\s+(?P<references>\d+)\s*", line)
             if m:
                 logging.debug(
-                    'Adding new Gauge metric pfctl_interfaces_ruleset_references{interface="%s"} %s'
+                    'Adding new Gauge metric pfctl_interface_ruleset_references{interface="%s"} %s'
                     % (interface, m.group("references"))
                 )
                 metrics["references"].add_metric([interface], m.group("references"))
@@ -175,7 +175,7 @@ class PfctlCollector(Collector):  # type: ignore
                     )
                 )
                 logging.debug(
-                    'Adding new Gauge metric pfctl_interfaces_cleared_timestamp_seconds{interface="%s"} %s'
+                    'Adding new Gauge metric pfctl_interface_cleared_timestamp_seconds{interface="%s"} %s'
                     % (interface, cleared)
                 )
                 metrics["cleared"].add_metric([interface], cleared)
@@ -184,7 +184,7 @@ class PfctlCollector(Collector):  # type: ignore
             # this should be a metrics line for the current interface in this format:
             # "	In4/Block:   [ Packets: 184339             Bytes: 29172941           ]"
             # where "In" can be "In" or "Out", "4" can be "4" or "6", and "Block" can be "Block" or "Pass"
-            direction, family, action, packets, byts = self.parse_interfaces_metric(
+            direction, family, action, packets, byts = self.parse_interface_metric(
                 line
             )
             if direction is None:
@@ -193,7 +193,7 @@ class PfctlCollector(Collector):  # type: ignore
                 )
                 continue
             logging.debug(
-                'Adding new Counter metric: pfctl_interfaces_packets_total{interface="%s", direction="%s", family="%s", action="%s"} %s'
+                'Adding new Counter metric: pfctl_interface_packets_total{interface="%s", direction="%s", family="%s", action="%s"} %s'
                 % (interface, direction, family, action, packets)
             )
             metrics["counters_packets"].add_metric(
@@ -207,7 +207,7 @@ class PfctlCollector(Collector):  # type: ignore
         for metric in metrics.values():
             yield metric
 
-    def parse_interfaces_metric(
+    def parse_interface_metric(
         self, line: str
     ) -> Union[tuple[str, str, str, int, int], tuple[None, None, None, None, None]]:
         """Parse a line of 'pfctl -vvs Interfaces' metrics output.
@@ -240,7 +240,7 @@ class PfctlCollector(Collector):  # type: ignore
         metrics: dict[str, Union[GaugeMetricFamily, CounterMetricFamily]] = {}
         for metric in ["evaluations", "packets", "bytes", "states"]:
             metrics[metric] = CounterMetricFamily(
-                f"pfctl_rules_{metric}_total",
+                f"pfctl_rule_{metric}_total",
                 "Total number of {metric} for this pf rule",
                 labels=["rule"],
             )
@@ -266,7 +266,7 @@ class PfctlCollector(Collector):  # type: ignore
             if m:
                 for metric in ["evaluations", "packets", "bytes", "states"]:
                     logging.debug(
-                        'Adding new Counter metric: pfctl_rules_%s_total{rule="%s"} %s'
+                        'Adding new Counter metric: pfctl_rule_%s_total{rule="%s"} %s'
                         % (metric, rule, m.group(metric))
                     )
                     metrics[metric].add_metric([rule], m.group(metric))

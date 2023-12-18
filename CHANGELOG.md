@@ -7,7 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-- Parse `pfctl -vs rules` output into metrics.
+### Added
+
+- Parse `pfctl -vs rules` output into `pfctl_rule_*` metrics.
+
+### Changed
+
+- Rename interface metrics from `pfctl_interfaces_*` to `pfctl_interface_**`
 
 
 ## [v0.3.0] - 2023-12-18
