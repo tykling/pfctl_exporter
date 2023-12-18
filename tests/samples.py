@@ -116,3 +116,29 @@ em0.7
 	Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
 	Out6/Block:  [ Packets: 0                  Bytes: 0                  ]
 """
+
+sample_rules_output = """scrub in on em0.3 all fragment reassemble
+  [ Evaluations: 369261    Packets: 30116     Bytes: 0           States: 0     ]
+  [ Inserted: uid 0 pid 2786 State Creations: 0     ]
+scrub in on em0.4 all fragment reassemble
+  [ Evaluations: 339145    Packets: 10460     Bytes: 0           States: 0     ]
+  [ Inserted: uid 0 pid 2786 State Creations: 0     ]
+scrub in on em0.7 all fragment reassemble
+  [ Evaluations: 328685    Packets: 117821    Bytes: 17766261    States: 0     ]
+  [ Inserted: uid 0 pid 2786 State Creations: 0     ]
+scrub in on epair1a all fragment reassemble
+  [ Evaluations: 59092     Packets: 0         Bytes: 0           States: 0     ]
+  [ Inserted: uid 0 pid 2786 State Creations: 0     ]
+block drop log all
+  [ Evaluations: 88951     Packets: 81079     Bytes: 15024708    States: 0     ]
+  [ Inserted: uid 0 pid 2786 State Creations: 0     ]
+pass in quick on em0.3 inet6 proto ipv6-icmp all icmp6-type echoreq keep state
+  [ Evaluations: 88951     Packets: 0         Bytes: 0           States: 0     ]
+  [ Inserted: uid 0 pid 2786 State Creations: 0     ]
+pass in quick on em0.7 proto tcp from <prometheus6> to <nuc2> port = 9999 flags S/SA keep state
+  [ Evaluations: 81079     Packets: 42615     Bytes: 33758359    States: 1     ]
+  [ Inserted: uid 0 pid 2786 State Creations: 0     ]
+pass in quick proto tcp from <allowssh> to <firewalls_own_ips> port = ssh flags S/SA keep state
+  [ Evaluations: 81079     Packets: 0         Bytes: 0           States: 0     ]
+  [ Inserted: uid 0 pid 2786 State Creations: 0     ]
+"""

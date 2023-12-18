@@ -2,7 +2,7 @@
 
 import logging
 from pfctl_exporter import PfctlCollector
-from .samples import sample_info_output, sample_interfaces_output
+from .samples import sample_info_output, sample_interfaces_output, sample_rules_output
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -30,5 +30,16 @@ def test_parse_interfaces_output(caplog) -> None:
     assert "found new interface: 'em0.3' - getting metrics..." in caplog.text
     assert (
         'Adding new Gauge metric pfctl_interfaces_cleared_timestamp_seconds{interface="em0.7"} 1700416241'
+        in caplog.text
+    )
+
+
+def test_parse_rules_output(caplog) -> None:
+    caplog.set_level(logging.DEBUG)
+    c = PfctlCollector()
+    for _ in c.collect_rules(mock_output=sample_rules_output.split("\n")):
+        pass
+    assert (
+        'Adding new Counter metric: pfctl_rules_bytes_total{rule="pass in quick on em0.7 proto tcp from <prometheus6> to <nuc2> port = 9999 flags S/SA keep state"} 33758359'
         in caplog.text
     )

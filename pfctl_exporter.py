@@ -227,6 +227,53 @@ class PfctlCollector(Collector):  # type: ignore
             int(m.group("bytes")),
         )
 
+    def collect_rules(
+        self, mock_output: Union[list[str], None] = None
+    ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
+        """Run pfctl -vs rules, parse output and return metrics."""
+        cmd = ["-vvs", "rules"]
+        lines = mock_output or self.run_pfctl_command(cmd)
+        logging.debug(f"got {len(lines)} lines of output from 'pfctl -vs rules'")
+
+        # define metrics
+        metrics: dict[str, Union[GaugeMetricFamily, CounterMetricFamily]] = {}
+        for metric in ["evaluations", "packets", "bytes", "states"]:
+            metrics[metric] = CounterMetricFamily(
+                f"pfctl_rules_{metric}_total",
+                "Total number of {metric} for this pf rule",
+                labels=["rule"],
+            )
+
+        # loop over lines in the output
+        for line in lines:
+            if not line:
+                # skip empty lines
+                continue
+
+            # look for interface headers
+            m = re.match(r"^(?P<rule>[a-z]+.*)$", line)
+            if m:
+                rule = m.group("rule")
+                logging.debug(f"found new rule: '{rule}' - getting metrics...")
+                continue
+
+            # find the metrics for this rule
+            m = re.match(
+                r"^  \[ Evaluations: (?P<evaluations>[0-9]+)\s+Packets: (?P<packets>[0-9]+)\s+Bytes: (?P<bytes>[0-9]+)\s+States: (?P<states>[0-9]+)\s+\]$",
+                line,
+            )
+            if m:
+                for metric in ["evaluations", "packets", "bytes", "states"]:
+                    logging.debug(
+                        'Adding new Counter metric: pfctl_rules_%s_total{rule="%s"} %s'
+                        % (metric, rule, m.group(metric))
+                    )
+                    metrics[metric].add_metric([rule], m.group(metric))
+
+        # done, yield everything
+        for metric in metrics.values():
+            yield metric
+
 
 REGISTRY.register(PfctlCollector())
 
