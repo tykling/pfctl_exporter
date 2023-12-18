@@ -21,7 +21,7 @@ class PfctlCollector(Collector):  # type: ignore
     """Custom Collector class which runs pfctl on each scrape."""
 
     def describe(self) -> list[str]:
-        """This empty describe method is needed for to avoid collect() being called on startup."""
+        """This empty describe method is needed to avoid collect() being called on startup."""
         return []
 
     def collect(
@@ -29,27 +29,32 @@ class PfctlCollector(Collector):  # type: ignore
     ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
         """Run pfctl, parse output and return metrics."""
         yield from self.collect_info()
+        yield from self.collect_interfaces()
+
+    def run_pfctl_command(self, cmd: list[str]) -> list[str]:
+        """Run a pfctl command. Hardcode full path for now."""
+        cmd.insert(0, "/sbin/pfctl")
+        cmdstr = " ".join(cmd)
+        logging.debug("Running '{cmdstr}' ...")
+        # run without shell semantics
+        proc = subprocess.run(cmd, text=True, capture_output=True)
+        if proc.returncode != 0:
+            logging.error(
+                f"Running '{cmdstr}' failed with exit code {proc.returncode}, bailing out"
+            )
+            raise RuntimeError(f"running {cmdstr} failed")
+        else:
+            lines = proc.stdout.split("\n")
+        logging.debug(f"returning {len(lines)} lines of output from pfctl")
+        return lines
 
     def collect_info(
-        self, mock_output: Union[str, None] = None
+        self, mock_output: Union[list[str], None] = None
     ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
         """Run pfctl -vvs info, parse output and return metrics."""
-        cmd = ["pfctl", "-vvs", "info"]
-        cmdstr = " ".join(cmd)
-        if mock_output:
-            logging.debug(f"NOT running '{cmdstr}', using mock_output instead")
-            lines = mock_output.split("\n")
-        else:
-            logging.debug("Running '{cmdstr}' ...")
-            proc = subprocess.run(cmd, text=True, capture_output=True)
-            if proc.returncode != 0:
-                logging.error(
-                    f"Running '{cmdstr}' failed with exit code {proc.returncode}, bailing out"
-                )
-                raise RuntimeError(f"running {cmdstr} failed")
-            else:
-                logging.debug("pfctl returned something, checking it...")
-                lines = proc.stdout.split("\n")
+        cmd = ["-vvs", "info"]
+        lines = mock_output or self.run_pfctl_command(cmd)
+        logging.debug(f"got {len(lines)} lines of output from pfctl")
         header: str = ""
         # loop over lines in the output
         for line in lines:
@@ -70,7 +75,7 @@ class PfctlCollector(Collector):  # type: ignore
                 continue
             elif line[0:2] == "  ":
                 # this is a metric for the current header
-                key, value = self.get_kv(line)
+                key, value = self.get_info_kv(line)
                 if key is None or value is None:
                     logging.warning(
                         f"cannot parse metric for header '{header}', skipping line: '{line}'"
@@ -95,13 +100,132 @@ class PfctlCollector(Collector):  # type: ignore
                 logging.warning(f"unknown line, skipping: {line}")
         logging.debug("no more lines, this is the end of collect()")
 
-    def get_kv(self, line: str) -> Union[tuple[str, int], tuple[None, None]]:
+    def get_info_kv(self, line: str) -> Union[tuple[str, int], tuple[None, None]]:
         """Turn the string "  searches                         4994939            2.3/s" into the tuple ("searches", 4994939)."""
         m = re.match(r"  (?P<key>[a-z\- ]+?) +(?P<value>[0-9]+).*", line)
         if not m:
             logging.debug(f"no regex match for line: '{line}'")
             return None, None
         return str(m.group("key")), int(m.group("value"))
+
+    def collect_interfaces(
+        self, mock_output: Union[list[str], None] = None
+    ) -> Iterator[Union[CounterMetricFamily, GaugeMetricFamily]]:
+        """Run pfctl -vvs Interfaces, parse output and return metrics."""
+        cmd = ["-vvs", "Interfaces"]
+        lines = mock_output or self.run_pfctl_command(cmd)
+        logging.debug(f"got {len(lines)} lines of output from 'pfctl -vvs Interfaces'")
+        interface: str = ""
+
+        # define metrics
+        metrics: dict[str, Union[GaugeMetricFamily, CounterMetricFamily]] = {}
+        metrics["cleared"] = GaugeMetricFamily(
+            "pfctl_interfaces_cleared_timestamp_seconds",
+            "Timestamp for when the counters for this interface were last reset",
+            labels=["interface"],
+        )
+        metrics["references"] = GaugeMetricFamily(
+            "pfctl_interfaces_ruleset_references",
+            "The number of rules in the current pf ruleset referencing this interface",
+            labels=["interface"],
+        )
+        metrics["counters_packets"] = CounterMetricFamily(
+            "pfctl_interfaces_packets_total",
+            "The number of packets on this interface aggregated by direction, family, and action",
+            labels=["interface", "direction", "family", "action"],
+        )
+        metrics["counters_bytes"] = CounterMetricFamily(
+            "pfctl_interfaces_bytes_total",
+            "The number of bytes on this interface aggregated by direction, family, and action",
+            labels=["interface", "direction", "family", "action"],
+        )
+
+        # loop over lines in the output
+        for line in lines:
+            if not line:
+                # skip empty lines
+                continue
+
+            # look for interface headers
+            m = re.match(r"^(?P<interface>[a-z0-9.]+)$", line)
+            if m:
+                interface = m.group("interface")
+                logging.debug(
+                    f"found new interface: '{interface}' - getting metrics..."
+                )
+                continue
+
+            # look for References in a line like "	References:  27                "
+            m = re.match(r"\tReferences:\s+(?P<references>\d+)\s*", line)
+            if m:
+                logging.debug(
+                    'Adding new Gauge metric pfctl_interfaces_ruleset_references{interface="%s"} %s'
+                    % (interface, m.group("references"))
+                )
+                metrics["references"].add_metric([interface], m.group("references"))
+                continue
+
+            # look for Cleared: in a line like "	Cleared:     Sun Nov 19 18:50:41 2023"
+            m = re.match(r"\tCleared:\s+(?P<cleared>.+)", line)
+            if m:
+                cleared = int(
+                    time.mktime(
+                        time.strptime(m.group("cleared"), "%a %b %d %H:%M:%S %Y")
+                    )
+                )
+                logging.debug(
+                    'Adding new Gauge metric pfctl_interfaces_cleared_timestamp_seconds{interface="%s"} %s'
+                    % (interface, cleared)
+                )
+                metrics["cleared"].add_metric([interface], cleared)
+                continue
+
+            # this should be a metrics line for the current interface in this format:
+            # "	In4/Block:   [ Packets: 184339             Bytes: 29172941           ]"
+            # where "In" can be "In" or "Out", "4" can be "4" or "6", and "Block" can be "Block" or "Pass"
+            direction, family, action, packets, byts = self.parse_interfaces_metric(
+                line
+            )
+            if direction is None:
+                logging.warning(
+                    f"cannot parse metric for interface '{interface}', skipping line: '{line}'"
+                )
+                continue
+            logging.debug(
+                'Adding new Counter metric: pfctl_interfaces_packets_total{interface="%s", direction="%s", family="%s", action="%s"} %s'
+                % (interface, direction, family, action, packets)
+            )
+            metrics["counters_packets"].add_metric(
+                [interface, direction, family, action], packets
+            )
+            metrics["counters_bytes"].add_metric(
+                [interface, direction, family, action], byts
+            )
+
+        # done, yield everything
+        for metric in metrics.values():
+            yield metric
+
+    def parse_interfaces_metric(
+        self, line: str
+    ) -> Union[tuple[str, str, str, int, int], tuple[None, None, None, None, None]]:
+        """Parse a line of 'pfctl -vvs Interfaces' metrics output.
+
+        Turn the string "	In4/Block:   [ Packets: 184339             Bytes: 29172941           ]" into
+        a tuple of (direction, family, action, packets, bytes).
+        """
+        p = r"	(?P<direction>In|Out)(?P<family>4|6)\/(?P<action>Block|Pass): +\[ +Packets: +(?P<packets>[0-9]+) +Bytes: +(?P<bytes>[0-9]+) +\]"
+        m = re.match(p, line)
+        if not m:
+            logging.debug(f"no regex match for line: '{line}'")
+            return None, None, None, None, None
+        return (
+            str(m.group("direction")).lower(),
+            f"ipv{m.group('family')}",
+            str(m.group("action")).lower(),
+            int(m.group("packets")),
+            int(m.group("bytes")),
+        )
 
 
 REGISTRY.register(PfctlCollector())

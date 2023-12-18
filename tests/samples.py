@@ -49,69 +49,70 @@ Syncookies
   halfopen states           0
 """
 
-sample_interfaces_output = """all                                                                                                                       
-        Cleared:     Sun Nov 19 18:50:41 2023                                                                             
-        References:  0                                                                                                    
-        In4/Pass:    [ Packets: 0                  Bytes: 0                  ]                                            
-        In4/Block:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out4/Block:  [ Packets: 0                  Bytes: 0                  ]                                            
-        In6/Pass:    [ Packets: 0                  Bytes: 0                  ]                                            
-        In6/Block:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out6/Block:  [ Packets: 0                  Bytes: 0                  ]                                            
-bridge                                                                                                                    
-        Cleared:     Sun Nov 19 18:50:41 2023                                                                             
-        References:  0                                                                                                    
-        In4/Pass:    [ Packets: 0                  Bytes: 0                  ]                                            
-        In4/Block:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out4/Block:  [ Packets: 0                  Bytes: 0                  ]                                            
-        In6/Pass:    [ Packets: 0                  Bytes: 0                  ]                                            
-        In6/Block:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out6/Block:  [ Packets: 0                  Bytes: 0                  ]                                            
-bridge3                                                                                                                   
-        Cleared:     Sun Nov 19 18:50:41 2023                                                                             
-        References:  0                                                                                                    
-        In4/Pass:    [ Packets: 0                  Bytes: 0                  ]                                            
-        In4/Block:   [ Packets: 802102             Bytes: 137417498          ]                                            
-        Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out4/Block:  [ Packets: 0                  Bytes: 0                  ]                                            
-        In6/Pass:    [ Packets: 30                 Bytes: 1720               ]                                            
-        In6/Block:   [ Packets: 696051             Bytes: 146163850          ]                                            
-        Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out6/Block:  [ Packets: 0                  Bytes: 0                  ]                             
-em0.3                                                                                                                     
-        Cleared:     Sun Nov 19 18:50:41 2023                                                                             
-        References:  27                                                                                                   
-        In4/Pass:    [ Packets: 0                  Bytes: 0                  ]                                            
-        In4/Block:   [ Packets: 802104             Bytes: 137417878          ]                                            
-        Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out4/Block:  [ Packets: 0                  Bytes: 0                  ]                                            
-        In6/Pass:    [ Packets: 40                 Bytes: 2320               ]                                            
-        In6/Block:   [ Packets: 696043             Bytes: 146163670          ]                                            
-        Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]                                            
-        Out6/Block:  [ Packets: 0                  Bytes: 0                  ]                                            
-em0.4                                                                                                                     
-        Cleared:     Sun Nov 19 18:50:41 2023                                                                             
-        References:  27                                                                                                   
-        In4/Pass:    [ Packets: 0                  Bytes: 0                  ]
-        In4/Block:   [ Packets: 184339             Bytes: 29172941           ]
-        Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]
-        Out4/Block:  [ Packets: 0                  Bytes: 0                  ]
-        In6/Pass:    [ Packets: 2938               Bytes: 163008             ]
-        In6/Block:   [ Packets: 43643              Bytes: 6389105            ]
-        Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
-        Out6/Block:  [ Packets: 0                  Bytes: 0                  ]
+sample_interfaces_output = """all
+	Cleared:     Sun Nov 19 18:50:41 2023
+	References:  0                 
+	In4/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	In4/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out4/Block:  [ Packets: 0                  Bytes: 0                  ]
+	In6/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	In6/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Block:  [ Packets: 0                  Bytes: 0                  ]
+bridge
+	Cleared:     Sun Nov 19 18:50:41 2023
+	References:  0                 
+	In4/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	In4/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out4/Block:  [ Packets: 0                  Bytes: 0                  ]
+	In6/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	In6/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Block:  [ Packets: 0                  Bytes: 0                  ]
+bridge3
+	Cleared:     Sun Nov 19 18:50:41 2023
+	References:  0                 
+	In4/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	In4/Block:   [ Packets: 802102             Bytes: 137417498          ]
+	Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out4/Block:  [ Packets: 0                  Bytes: 0                  ]
+	In6/Pass:    [ Packets: 30                 Bytes: 1720               ]
+	In6/Block:   [ Packets: 696051             Bytes: 146163850          ]
+	Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Block:  [ Packets: 0                  Bytes: 0                  ]
+em0.3
+	Cleared:     Sun Nov 19 18:50:41 2023
+	References:  27                
+	In4/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	In4/Block:   [ Packets: 802104             Bytes: 137417878          ]
+	Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out4/Block:  [ Packets: 0                  Bytes: 0                  ]
+	In6/Pass:    [ Packets: 40                 Bytes: 2320               ]
+	In6/Block:   [ Packets: 696043             Bytes: 146163670          ]
+	Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Block:  [ Packets: 0                  Bytes: 0                  ]
+em0.4
+	Cleared:     Sun Nov 19 18:50:41 2023
+	References:  27                
+	In4/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	In4/Block:   [ Packets: 184339             Bytes: 29172941           ]
+	Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out4/Block:  [ Packets: 0                  Bytes: 0                  ]
+	In6/Pass:    [ Packets: 2938               Bytes: 163008             ]
+	In6/Block:   [ Packets: 43643              Bytes: 6389105            ]
+	Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Block:  [ Packets: 0                  Bytes: 0                  ]
 em0.7
-        Cleared:     Sun Nov 19 18:50:41 2023
-        References:  28                
-        In4/Pass:    [ Packets: 881102             Bytes: 262038497          ]
-        In4/Block:   [ Packets: 24                 Bytes: 1440               ]
-        Out4/Pass:   [ Packets: 1313278            Bytes: 905857458          ]
-        Out4/Block:  [ Packets: 0                  Bytes: 0                  ]
-        In6/Pass:    [ Packets: 0                  Bytes: 0                  ]
-        In6/Block:   [ Packets: 0                  Bytes: 0                  ]
-        Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
-        Out6/Block:  [ Packets: 0                  Bytes: 0                  ]"""
+	Cleared:     Sun Nov 19 18:50:41 2023
+	References:  28                
+	In4/Pass:    [ Packets: 881102             Bytes: 262038497          ]
+	In4/Block:   [ Packets: 24                 Bytes: 1440               ]
+	Out4/Pass:   [ Packets: 1313278            Bytes: 905857458          ]
+	Out4/Block:  [ Packets: 0                  Bytes: 0                  ]
+	In6/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	In6/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Block:  [ Packets: 0                  Bytes: 0                  ]
+"""
