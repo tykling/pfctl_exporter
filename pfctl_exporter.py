@@ -30,6 +30,7 @@ class PfctlCollector(Collector):  # type: ignore
         """Run pfctl, parse output and return metrics."""
         yield from self.collect_info()
         yield from self.collect_interfaces()
+        yield from self.collect_rules()
 
     def run_pfctl_command(self, cmd: list[str]) -> list[str]:
         """Run a pfctl command. Hardcode full path for now."""
