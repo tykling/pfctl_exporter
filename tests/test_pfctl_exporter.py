@@ -75,3 +75,7 @@ def test_parse_tables_output(caplog) -> None:
         'Adding new Counter metric pfctl_table_bytes_total{table="nuc2", direction="Out", action="Pass"} 830514949'
         in caplog.text
     )
+    assert (
+        'Adding new Counter metric pfctl_table_bytes_total{table="nuc2", direction="Out", action="XPass"} 0'
+        in caplog.text
+    )

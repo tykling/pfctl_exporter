@@ -445,7 +445,7 @@ class PfctlCollector(Collector):  # type: ignore
 
             # look for table counters like "	In/Pass:     [ Packets: 461268             Bytes: 57925850           ]"
             m = re.match(
-                r"^\t(?P<direction>In|Out)/(?P<action>Block|Pass|Xpass):\s+\[ Packets: (?P<packets>[0-9]+)\s+Bytes: (?P<bytes>[0-9]+)\s+\]",
+                r"^\t(?P<direction>In|Out)/(?P<action>Block|Pass|XPass):\s+\[ Packets: (?P<packets>[0-9]+)\s+Bytes: (?P<bytes>[0-9]+)\s+\]",
                 line,
             )
             if m:
