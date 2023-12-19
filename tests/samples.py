@@ -115,6 +115,17 @@ em0.7
 	In6/Block:   [ Packets: 0                  Bytes: 0                  ]
 	Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
 	Out6/Block:  [ Packets: 0                  Bytes: 0                  ]
+lo0 (skip)
+	Cleared:     Sun Nov 19 18:50:41 2023
+	References:  0                 
+	In4/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	In4/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out4/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out4/Block:  [ Packets: 0                  Bytes: 0                  ]
+	In6/Pass:    [ Packets: 0                  Bytes: 0                  ]
+	In6/Block:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Pass:   [ Packets: 0                  Bytes: 0                  ]
+	Out6/Block:  [ Packets: 0                  Bytes: 0                  ]
 """
 
 sample_rules_output = """scrub in on em0.3 all fragment reassemble

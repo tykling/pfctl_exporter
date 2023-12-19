@@ -31,13 +31,14 @@ def test_parse_interfaces_output(caplog) -> None:
     c = PfctlCollector()
     for _ in c.collect_interfaces(mock_output=sample_interfaces_output.split("\n")):
         pass
-    assert "got 67 lines of output from 'pfctl -vvs Interfaces'" in caplog.text
+    assert "got 78 lines of output from 'pfctl -vvs Interfaces'" in caplog.text
     assert "found new interface: 'em0.3' - getting metrics..." in caplog.text
     assert (
         'Adding new Gauge metric pfctl_interface_cleared_timestamp_seconds{interface="em0.7"} 1700416241'
         in caplog.text
     )
-
+    assert 'Adding new Gauge metric pfctl_interface_skip{interface="em0.3"} 0' in caplog.text
+    assert 'Adding new Gauge metric pfctl_interface_skip{interface="lo0"} 1' in caplog.text
 
 def test_parse_rules_output(caplog) -> None:
     caplog.set_level(logging.DEBUG)

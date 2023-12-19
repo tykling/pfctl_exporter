@@ -146,6 +146,11 @@ class PfctlCollector(Collector):  # type: ignore
             "The number of bytes on this interface aggregated by direction, family, and action",
             labels=["interface", "direction", "family", "action"],
         )
+        metrics["skip"] = GaugeMetricFamily(
+            "pfctl_interface_skip",
+            "This Gauge is 1 if filtering on the interface is disabled with 'set skip' or 0 if filtering is enabled on the interface",
+            labels=["interface"],
+        )
 
         # loop over lines in the output
         for line in lines:
@@ -154,12 +159,20 @@ class PfctlCollector(Collector):  # type: ignore
                 continue
 
             # look for interface headers
-            m = re.match(r"^(?P<interface>[a-z0-9.]+)$", line)
+            m = re.match(r"^(?P<interface>[a-z0-9.]+)(?P<skip> \(skip\))?$", line)
             if m:
                 interface = m.group("interface")
                 logging.debug(
                     f"found new interface: '{interface}' - getting metrics..."
                 )
+                if m.group("skip") is None:
+                    # filtering is active on this interface
+                    logging.debug('Adding new Gauge metric pfctl_interface_skip{interface="%s"} %s' % (interface, 0))
+                    metrics["skip"].add_metric([interface], 0)
+                else:
+                    # this interface has "set skip"
+                    logging.debug('Adding new Gauge metric pfctl_interface_skip{interface="%s"} %s' % (interface, 1))
+                    metrics["skip"].add_metric([interface], 1)
                 continue
 
             # look for References in a line like "	References:  27                "
