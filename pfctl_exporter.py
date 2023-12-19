@@ -84,6 +84,25 @@ class PfctlCollector(Collector):  # type: ignore
                 # this is a metric for the current header
                 key, value = self.get_info_kv(line)
                 if key is None or value is None:
+                    if header == "syncookies":
+                        # some of the syncookies info is not numeric, stick it in an info metric for now
+                        # TODO: more samples are needed from someone who uses syncookies
+                        # look for the "mode" line
+                        m = re.match(r"  mode\s+(?P<mode>.+)$", line)
+                        if m:
+                            metric = GaugeMetricFamily("pfctl_syncookies_mode", "The current syncookies mode is in the 'mode' label of this metric. The value of this metric is always 1.", labels=["mode"])
+                            logging.debug('Adding new Gauge metric pfctl_syncookies_mode{mode="%s"} 1' % m.group("mode"))
+                            metric.add_metric([m.group("mode")], 1)
+                            continue
+
+                        # look for the "active" line
+                        m = re.match(r"  active\s+(?P<active>.+)$", line)
+                        if m:
+                            metric = GaugeMetricFamily("pfctl_syncookies_active", "The current syncookies active status is in the 'active' label of this metric. The value of this metric is always 1.", labels=["active"])
+                            logging.debug('Adding new Gauge metric pfctl_syncookies_active{active="%s"} 1' % m.group("active"))
+                            metric.add_metric([m.group("active")], 1)
+                            continue
+
                     logging.warning(
                         f"cannot parse metric for header '{header}', skipping line: '{line}'"
                     )
@@ -111,7 +130,6 @@ class PfctlCollector(Collector):  # type: ignore
         """Turn the string "  searches                         4994939            2.3/s" into the tuple ("searches", 4994939)."""
         m = re.match(r"  (?P<key>[a-z\- ]+?) +(?P<value>[0-9]+).*", line)
         if not m:
-            logging.debug(f"no regex match for line: '{line}'")
             return None, None
         return str(m.group("key")), int(m.group("value"))
 

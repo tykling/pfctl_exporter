@@ -24,7 +24,7 @@ def test_parse_info_output(caplog) -> None:
     assert (
         "found new Gauge metric pfctl_syncookies_highwater with value 25" in caplog.text
     )
-
+    assert 'Adding new Gauge metric pfctl_syncookies_mode{mode="never"} 1' in caplog.text
 
 def test_parse_interfaces_output(caplog) -> None:
     caplog.set_level(logging.DEBUG)

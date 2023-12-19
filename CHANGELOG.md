@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixes
 
 - Fixed bug where interfaces with `set skip` were not parsed correctly
+- Fixed parsing of a few lines of non-numeric `pfctl -vvs info` output
 
 
 ## [v0.4.0] - 2023-12-19
