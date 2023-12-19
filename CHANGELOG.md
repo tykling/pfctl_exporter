@@ -5,15 +5,15 @@ All notable changes to `pfctl_exporter` will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [v0.5.1] - 2023-12-19
 
-### Fixes
+### Fixed
 
 - Fixed bug where interfaces with `set skip` were not parsed correctly
 - Fixed parsing of a few lines of non-numeric `pfctl -vvs info` output
 
 
-## [v0.4.0] - 2023-12-19
+## [v0.5.0] - 2023-12-19
 
 ### Added
 
